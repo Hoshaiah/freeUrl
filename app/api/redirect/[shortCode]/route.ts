@@ -36,6 +36,7 @@ export async function GET(
 
     return NextResponse.json({
       originalUrl: link.originalUrl,
+      linkId: link.id,
     })
   } catch (error) {
     console.error('Error fetching link:', error)

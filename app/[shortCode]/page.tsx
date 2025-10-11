@@ -12,6 +12,7 @@ export default function NewsletterInterstitial() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+  const [linkId, setLinkId] = useState<string | null>(null)
 
   useEffect(() => {
     // Fetch the original URL and log the click
@@ -22,6 +23,7 @@ export default function NewsletterInterstitial() {
 
         if (res.ok) {
           setRedirectUrl(data.originalUrl)
+          setLinkId(data.linkId)
         } else {
           setError(data.error || 'Link not found')
         }
@@ -42,7 +44,7 @@ export default function NewsletterInterstitial() {
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, linkId }),
       })
 
       const data = await res.json()

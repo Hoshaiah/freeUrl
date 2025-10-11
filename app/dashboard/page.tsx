@@ -1,11 +1,16 @@
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
-async function getAnalytics() {
+async function getAnalytics(userId: string) {
   const links = await prisma.link.findMany({
+    where: { userId },
     include: {
       clicks: {
         orderBy: {
@@ -18,8 +23,13 @@ async function getAnalytics() {
     },
   })
 
-  const totalClicks = await prisma.click.count()
-  const totalLinks = await prisma.link.count()
+  const totalClicks = await prisma.click.count({
+    where: {
+      link: { userId },
+    },
+  })
+
+  const totalLinks = links.length
   const totalSignups = await prisma.emailSignup.count()
 
   return {
@@ -31,11 +41,19 @@ async function getAnalytics() {
 }
 
 export default async function Dashboard() {
-  const { links, totalClicks, totalLinks, totalSignups } = await getAnalytics()
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user) {
+    redirect('/auth/signin?callbackUrl=/dashboard')
+  }
+
+  const { links, totalClicks, totalLinks, totalSignups } = await getAnalytics(session.user.id)
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+        <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
           <p className="text-gray-600">Track your shortened links performance</p>
@@ -127,5 +145,6 @@ export default async function Dashboard() {
         </div>
       </div>
     </div>
+    </>
   )
 }

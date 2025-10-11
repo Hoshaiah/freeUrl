@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 
 export default function Home() {
   const [longUrl, setLongUrl] = useState('')
@@ -42,8 +43,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">FreeURL</h1>
           <p className="text-gray-600">Shorten your links in seconds</p>
@@ -112,5 +115,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    </>
   )
 }

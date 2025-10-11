@@ -29,10 +29,16 @@ services:
     environment:
       DATABASE_URL: "postgresql://freeurl:freeurl_password@postgres:5432/freeurl?schema=public"
       NODE_ENV: production
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     ports:
       - "3000:3000"
     volumes:
       - ./prisma:/app/prisma
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 function generateShortCode(length: number = 6): string {
@@ -21,6 +23,9 @@ function isValidUrl(url: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get session to see if user is logged in
+    const session = await getServerSession(authOptions)
+
     const { url } = await request.json()
 
     if (!url || typeof url !== 'string') {
@@ -60,11 +65,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the link
+    // Create the link (associate with user if logged in)
     const link = await prisma.link.create({
       data: {
         shortCode,
         originalUrl: url,
+        userId: session?.user?.id || null,
       },
     })
 

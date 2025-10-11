@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 function isValidEmail(email: string): boolean {
@@ -8,7 +10,10 @@ function isValidEmail(email: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    // Get session to see if user is logged in
+    const session = await getServerSession(authOptions)
+
+    const { email, linkId } = await request.json()
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -24,27 +29,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Try to create the email signup
-    try {
-      const signup = await prisma.emailSignup.create({
-        data: { email: email.toLowerCase() },
-      })
+    // Create the email signup
+    const signup = await prisma.emailSignup.create({
+      data: {
+        email: email.toLowerCase(),
+        userId: session?.user?.id || null,
+        linkId: linkId || null,
+      },
+    })
 
-      return NextResponse.json({
-        success: true,
-        email: signup.email,
-        createdAt: signup.createdAt,
-      })
-    } catch (error: unknown) {
-      // Check if it's a unique constraint violation
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'Email already subscribed' },
-          { status: 409 }
-        )
-      }
-      throw error
-    }
+    return NextResponse.json({
+      success: true,
+      email: signup.email,
+      createdAt: signup.createdAt,
+    })
   } catch (error) {
     console.error('Error saving email signup:', error)
     return NextResponse.json(
