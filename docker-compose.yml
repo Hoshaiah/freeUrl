@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: freeurl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: freeurl
+      POSTGRES_PASSWORD: freeurl_password
+      POSTGRES_DB: freeurl
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freeurl"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freeurl-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://freeurl:freeurl_password@postgres:5432/freeurl?schema=public"
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./prisma:/app/prisma
+
+volumes:
+  postgres_data:
