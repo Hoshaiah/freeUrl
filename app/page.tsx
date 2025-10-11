@@ -65,7 +65,7 @@ export default function Home() {
                 onChange={(e) => setLongUrl(e.target.value)}
                 placeholder="https://example.com/very/long/url/here"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
               />
             </div>
 
@@ -92,7 +92,7 @@ export default function Home() {
                   type="text"
                   value={shortUrl}
                   readOnly
-                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm"
+                  className="flex-1 px-3 py-2 text-black bg-white border border-gray-300 rounded-lg text-sm"
                 />
                 <button
                   onClick={copyToClipboard}
