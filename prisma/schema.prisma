@@ -63,13 +63,14 @@ model VerificationToken {
 }
 
 model Link {
-  id          String   @id @default(cuid())
-  shortCode   String   @unique
-  originalUrl String
-  createdAt   DateTime @default(now())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  clicks      Click[]
+  id           String        @id @default(cuid())
+  shortCode    String        @unique
+  originalUrl  String
+  createdAt    DateTime      @default(now())
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  clicks       Click[]
+  emailSignups EmailSignup[]
 
   @@index([userId])
 }
@@ -89,6 +90,7 @@ model EmailSignup {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   linkId    String?
+  link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@index([userId])
