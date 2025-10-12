@@ -1,10 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 
 export default function Home() {
+  const { data: session } = useSession()
+  const router = useRouter()
   const [longUrl, setLongUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,6 +19,12 @@ export default function Home() {
     setError('')
     setShortUrl('')
     setLoading(true)
+
+    // If user is not signed in, redirect to sign in page
+    if (!session) {
+      router.push('/auth/signin?callbackUrl=/')
+      return
+    }
 
     try {
       const res = await fetch('/api/shorten', {
@@ -105,14 +115,16 @@ export default function Home() {
           )}
         </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            href="/dashboard"
-            className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
-          >
-            View Analytics Dashboard →
-          </Link>
-        </div>
+        {session && (
+          <div className="mt-8 text-center">
+            <Link
+              href="/dashboard"
+              className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+            >
+              View Analytics Dashboard →
+            </Link>
+          </div>
+        )}
       </div>
     </div>
     </>
