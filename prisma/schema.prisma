@@ -14,17 +14,16 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
-  email         String        @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
   links         Link[]
-  emailSignups  EmailSignup[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Account {
@@ -71,8 +70,10 @@ model Link {
   user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   clicks       Click[]
   emailSignups EmailSignup[]
+  isActive     Boolean       @default(true)
 
   @@index([userId])
+  @@index([isActive])
 }
 
 model Click {
@@ -87,13 +88,10 @@ model Click {
 model EmailSignup {
   id        String   @id @default(cuid())
   email     String
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   linkId    String?
   link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
-  @@index([userId])
   @@index([linkId])
   @@index([email])
 }

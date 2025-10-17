@@ -46,7 +46,6 @@ async function main() {
     signups.push({
       email,
       linkId,
-      userId: null, // All anonymous for now
     })
   }
 

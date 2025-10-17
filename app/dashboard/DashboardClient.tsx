@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 type LinkType = {
   id: string
@@ -10,12 +11,12 @@ type LinkType = {
   createdAt: Date
   clicks: { id: string }[]
   _count: { emailSignups: number }
+  isActive: boolean
 }
 
 type EmailSignupType = {
   id: string
   email: string
-  userId: string | null
   linkId: string | null
   createdAt: Date
 }
@@ -23,13 +24,41 @@ type EmailSignupType = {
 type Props = {
   links: LinkType[]
   emailSignups: EmailSignupType[]
+  showDeactivated: boolean
 }
 
-export default function DashboardClient({ links, emailSignups }: Props) {
+export default function DashboardClient({ links, emailSignups, showDeactivated }: Props) {
+  const router = useRouter()
   const [linksPage, setLinksPage] = useState(1)
   const [linksPerPage, setLinksPerPage] = useState(10)
   const [signupsPage, setSignupsPage] = useState(1)
   const [signupsPerPage, setSignupsPerPage] = useState(10)
+  const [togglingLinks, setTogglingLinks] = useState<Set<string>>(new Set())
+
+  const handleToggleLink = async (linkId: string) => {
+    setTogglingLinks(prev => new Set(prev).add(linkId))
+
+    try {
+      const res = await fetch(`/api/links/${linkId}/toggle`, {
+        method: 'PATCH',
+      })
+
+      if (res.ok) {
+        router.refresh() // Refresh server component data
+      } else {
+        alert('Failed to toggle link status')
+      }
+    } catch (error) {
+      console.error('Error toggling link:', error)
+      alert('An error occurred')
+    } finally {
+      setTogglingLinks(prev => {
+        const next = new Set(prev)
+        next.delete(linkId)
+        return next
+      })
+    }
+  }
 
   // Links pagination
   const totalLinksPages = Math.ceil(links.length / linksPerPage)
@@ -48,7 +77,17 @@ export default function DashboardClient({ links, emailSignups }: Props) {
       {/* Links Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">All Links</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {showDeactivated ? 'Deactivated Links' : 'Active Links'}
+            </h2>
+            <Link
+              href={showDeactivated ? '/dashboard' : '/dashboard?deactivated=true'}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              {showDeactivated ? '← View Active Links' : 'View Deactivated Links →'}
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">Show:</label>
             <select
@@ -91,6 +130,9 @@ export default function DashboardClient({ links, emailSignups }: Props) {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Created
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -120,6 +162,23 @@ export default function DashboardClient({ links, emailSignups }: Props) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(link.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleLink(link.id)}
+                          disabled={togglingLinks.has(link.id)}
+                          className={`px-3 py-1 rounded text-sm font-medium transition ${
+                            showDeactivated
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200 disabled:bg-green-50'
+                              : 'bg-red-100 text-red-800 hover:bg-red-200 disabled:bg-red-50'
+                          } disabled:cursor-not-allowed`}
+                        >
+                          {togglingLinks.has(link.id)
+                            ? '...'
+                            : showDeactivated
+                            ? 'Activate'
+                            : 'Deactivate'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -205,9 +264,6 @@ export default function DashboardClient({ links, emailSignups }: Props) {
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Link ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -220,17 +276,6 @@ export default function DashboardClient({ links, emailSignups }: Props) {
                     <tr key={signup.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{signup.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {signup.userId ? (
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {signup.userId.substring(0, 8)}...
-                            </code>
-                          ) : (
-                            <span className="text-gray-400 italic">Anonymous</span>
-                          )}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">

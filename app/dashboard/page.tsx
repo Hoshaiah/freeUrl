@@ -9,9 +9,12 @@ import DashboardClient from './DashboardClient'
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
 
-async function getAnalytics(userId: string) {
+async function getAnalytics(userId: string, showDeactivated: boolean = false) {
   const links = await prisma.link.findMany({
-    where: { userId },
+    where: {
+      userId,
+      isActive: showDeactivated ? false : true,
+    },
     include: {
       clicks: {
         select: {
@@ -54,14 +57,24 @@ async function getAnalytics(userId: string) {
   }
 }
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ deactivated?: string }>
+}) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     redirect('/auth/signin?callbackUrl=/dashboard')
   }
 
-  const { links, totalClicks, totalLinks, totalSignups, emailSignups } = await getAnalytics(session.user.id)
+  const params = await searchParams
+  const showDeactivated = params.deactivated === 'true'
+
+  const { links, totalClicks, totalLinks, totalSignups, emailSignups } = await getAnalytics(
+    session.user.id,
+    showDeactivated
+  )
 
   return (
     <>
@@ -90,7 +103,11 @@ export default async function Dashboard() {
           </div>
 
           {/* Client Component with Pagination */}
-          <DashboardClient links={links} emailSignups={emailSignups} />
+          <DashboardClient
+            links={links}
+            emailSignups={emailSignups}
+            showDeactivated={showDeactivated}
+          />
 
           {/* Back to Home */}
           <div className="mt-8 text-center">

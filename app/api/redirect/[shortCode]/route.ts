@@ -27,6 +27,14 @@ export async function GET(
       )
     }
 
+    // Check if link is active
+    if (!link.isActive) {
+      return NextResponse.json(
+        { error: 'This link has been deactivated' },
+        { status: 410 } // 410 Gone
+      )
+    }
+
     // Log the click
     await prisma.click.create({
       data: {
