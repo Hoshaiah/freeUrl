@@ -16,6 +16,12 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <Link
+              href="/pricing"
+              className="text-gray-700 hover:text-indigo-600 font-medium"
+            >
+              Pricing
+            </Link>
             {status === 'loading' ? (
               <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
             ) : session ? (

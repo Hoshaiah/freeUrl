@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkLinkLimit } from '@/lib/subscription'
 
 function generateShortCode(length: number = 6): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -40,6 +41,17 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid URL format' },
         { status: 400 }
       )
+    }
+
+    // Check link limit for authenticated users
+    if (session?.user?.id) {
+      const canCreateLink = await checkLinkLimit(session.user.id)
+      if (!canCreateLink) {
+        return NextResponse.json(
+          { error: 'Link limit reached. Please upgrade your plan.' },
+          { status: 403 }
+        )
+      }
     }
 
     // Generate unique short code

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import DashboardClient from './DashboardClient'
+import { getUserPlan, PLAN_LIMITS } from '@/lib/subscription'
 
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic'
@@ -76,21 +77,49 @@ export default async function Dashboard({
     showDeactivated
   )
 
+  // Get user's plan
+  const userPlan = await getUserPlan(session.user.id)
+  const planLimits = PLAN_LIMITS[userPlan]
+
+  console.log('[Dashboard] User ID:', session.user.id)
+  console.log('[Dashboard] User plan:', userPlan)
+
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-            <p className="text-gray-600">Track your shortened links performance</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+                <p className="text-gray-600">Track your shortened links performance</p>
+              </div>
+              <div className="bg-white rounded-lg shadow px-6 py-4">
+                <div className="text-sm text-gray-600 mb-1">Current Plan</div>
+                <div className="text-2xl font-bold text-indigo-600 capitalize">{userPlan}</div>
+                {userPlan === 'free' && (
+                  <Link
+                    href="/pricing"
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    Upgrade →
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-sm font-medium text-gray-600 mb-1">Total Links</div>
-              <div className="text-3xl font-bold text-indigo-600">{totalLinks}</div>
+              <div className="text-3xl font-bold text-indigo-600">
+                {totalLinks}
+                <span className="text-lg text-gray-500 ml-2">
+                  / {planLimits.links === Infinity ? '∞' : planLimits.links}
+                </span>
+              </div>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-sm font-medium text-gray-600 mb-1">Total Clicks</div>
@@ -98,7 +127,12 @@ export default async function Dashboard({
             </div>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-sm font-medium text-gray-600 mb-1">Email Signups</div>
-              <div className="text-3xl font-bold text-purple-600">{totalSignups}</div>
+              <div className="text-3xl font-bold text-purple-600">
+                {totalSignups}
+                <span className="text-lg text-gray-500 ml-2">
+                  / {planLimits.emailSignups === Infinity ? '∞' : planLimits.emailSignups}
+                </span>
+              </div>
             </div>
           </div>
 
