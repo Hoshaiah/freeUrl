@@ -16,15 +16,16 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setShortUrl('')
-    setLoading(true)
-
     // If user is not signed in, redirect to sign in page
     if (!session) {
       router.push('/auth/signin?callbackUrl=/')
       return
     }
+
+    setError('')
+    setShortUrl('')
+    setLoading(true)
+
 
     try {
       const res = await fetch('/api/shorten', {
@@ -259,12 +260,12 @@ export default function Home() {
                     Paste any link you want to share
                   </label>
                   <input
-                    type="url"
+                    type={!session ? 'text' : 'url'}
                     id="url"
                     value={longUrl}
                     onChange={(e) => setLongUrl(e.target.value)}
                     placeholder="https://your-content.com/blog/amazing-post"
-                    required
+                    required={!session ? false : true}
                     className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                   />
                 </div>
