@@ -65,18 +65,17 @@ export default function Home() {
               <span className="text-indigo-600"> Leads</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Every link you share is an opportunity to grow your email list.
-              Capture leads automatically before your followers reach their destination.
+              Build your email list on autopilot. Shorten any link, and your followers see an email signup before accessing your free content. Turn clicks into subscribers without lifting a finger.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <button
-                onClick={() => router.push('/auth/signin')}
+                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
                 className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition text-lg"
               >
-                Start Building Your List
+                Try For Free
               </button>
               <button
-                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
                 className="px-8 py-4 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-50 transition text-lg border-2 border-indigo-600"
               >
                 See How It Works
@@ -132,7 +131,7 @@ export default function Home() {
         </section>
 
         {/* How It Works Section */}
-        <section className="bg-gradient-to-br from-indigo-50 to-blue-50 py-20">
+        <section id="how-it-works" className="bg-gradient-to-br from-indigo-50 to-blue-50 py-20">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">How It Works</h2>
