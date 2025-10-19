@@ -65,7 +65,7 @@ export default function Home() {
               <span className="text-indigo-600"> Leads</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Build your email list on autopilot. Shorten any link, and your followers see an email signup before accessing your free content. Turn clicks into subscribers without lifting a finger.
+              Build your email list on autopilot. Shorten any link, and your followers see an email signup before accessing your free content. Turn clicks into subscribers easy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <button
@@ -110,7 +110,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Track Every Click</h3>
               <p className="text-gray-600">
-                See how many people click your links and how many convert to subscribers. Data you can actually use.
+                Real-time analytics on clicks, conversions, location, and engagement-time. See what's working and double down on it.
               </p>
             </div>
 
