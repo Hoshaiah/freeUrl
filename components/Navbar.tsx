@@ -54,12 +54,20 @@ export default function Navbar() {
                 </div>
               </>
             ) : (
-              <Link
-                href="/auth/signin"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
-              >
-                Sign In
-              </Link>
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="text-gray-700 hover:text-indigo-600 font-medium"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/auth/signin"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
           </div>
         </div>
