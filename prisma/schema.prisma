@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Account {
-  id                String  @id
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -20,56 +20,56 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
 model Click {
-  id        String   @id
+  id        String   @id @default(cuid())
   linkId    String
   timestamp DateTime @default(now())
-  Link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
 }
 
 model EmailSignup {
-  id        String   @id
+  id        String   @id @default(cuid())
   email     String
   linkId    String?
   createdAt DateTime @default(now())
-  Link      Link?    @relation(fields: [linkId], references: [id])
+  link      Link?    @relation(fields: [linkId], references: [id])
 
   @@index([email])
   @@index([linkId])
 }
 
 model Link {
-  id          String        @id
+  id          String        @id @default(cuid())
   shortCode   String        @unique
   originalUrl String
   createdAt   DateTime      @default(now())
   userId      String?
   isActive    Boolean       @default(true)
-  Click       Click[]
-  EmailSignup EmailSignup[]
-  User        User?         @relation(fields: [userId], references: [id])
+  clicks      Click[]
+  emailSignups EmailSignup[]
+  user        User?         @relation(fields: [userId], references: [id])
 
   @@index([isActive])
   @@index([userId])
 }
 
 model Session {
-  id           String   @id
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
-  id                     String   @id
+  id                     String   @id @default(cuid())
   userId                 String   @unique
   stripeCustomerId       String   @unique
   stripeSubscriptionId   String   @unique
@@ -78,8 +78,8 @@ model Subscription {
   plan                   String
   status                 String
   createdAt              DateTime @default(now())
-  updatedAt              DateTime
-  User                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt              DateTime @default(now()) @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
@@ -87,17 +87,17 @@ model Subscription {
 }
 
 model User {
-  id            String        @id
+  id            String        @id @default(cuid())
   name          String?
   email         String        @unique
   emailVerified DateTime?
   image         String?
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  Account       Account[]
-  Link          Link[]
-  Session       Session[]
-  Subscription  Subscription?
+  updatedAt     DateTime      @default(now()) @updatedAt
+  accounts      Account[]
+  links         Link[]
+  sessions      Session[]
+  subscription  Subscription?
 }
 
 model VerificationToken {
