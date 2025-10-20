@@ -55,6 +55,7 @@ model Link {
   clicks      Click[]
   emailSignups EmailSignup[]
   user        User?         @relation(fields: [userId], references: [id])
+  page        Page?
 
   @@index([isActive])
   @@index([userId])
@@ -106,4 +107,16 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  linkId    String   @unique
+  html      String   @db.Text
+  css       String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
 }

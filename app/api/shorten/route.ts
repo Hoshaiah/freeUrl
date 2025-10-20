@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkLinkLimit } from '@/lib/subscription'
+import { PAGE_TEMPLATES } from '@/lib/pageTemplates'
 
 function generateShortCode(length: number = 6): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -85,6 +86,24 @@ export async function POST(request: NextRequest) {
         userId: session?.user?.id || null,
       },
     })
+
+    // Auto-create default page for the link
+    const defaultTemplate = PAGE_TEMPLATES.find(t => t.id === 'default')
+    if (defaultTemplate) {
+      try {
+        await prisma.page.create({
+          data: {
+            linkId: link.id,
+            html: defaultTemplate.html,
+            css: defaultTemplate.css,
+          },
+        })
+        console.log('Default page auto-created for link:', link.id)
+      } catch (error) {
+        console.error('Failed to create default page:', error)
+        // Don't fail the link creation if page creation fails
+      }
+    }
 
     return NextResponse.json({
       shortCode: link.shortCode,

@@ -26,6 +26,11 @@ async function getLinks(userId: string, showDeactivated: boolean = false) {
           emailSignups: true,
         },
       },
+      page: {
+        select: {
+          id: true,
+        },
+      },
     },
     orderBy: {
       createdAt: 'desc',

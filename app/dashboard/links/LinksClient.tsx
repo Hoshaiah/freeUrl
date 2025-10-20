@@ -12,6 +12,7 @@ type LinkType = {
   clicks: { id: string }[]
   _count: { emailSignups: number }
   isActive: boolean
+  page: { id: string } | null
 }
 
 type Props = {
@@ -113,6 +114,9 @@ export default function LinksClient({ links, showDeactivated }: Props) {
                     Created
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Page
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
@@ -144,6 +148,14 @@ export default function LinksClient({ links, showDeactivated }: Props) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(link.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Link
+                        href={`/dashboard/pages/${link.id}/edit`}
+                        className="inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+                      >
+                        {link.page ? 'Edit Page' : 'Create Page'}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button

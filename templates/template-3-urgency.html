@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Limited time offer - Subscribe now and get instant access to exclusive content">
+  <title>Limited Time Offer - Subscribe Now</title>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="alert-banner">
+        <span class="pulse-dot"></span>
+        <span class="banner-text">LIMITED TIME OFFER</span>
+      </div>
+
+      <div class="timer-section">
+        <h2 class="timer-label">Your Exclusive Access Expires In:</h2>
+        <div class="timer">
+          <div class="time-block">
+            <span class="time-value" id="minutes">05</span>
+            <span class="time-label">MIN</span>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-block">
+            <span class="time-value" id="seconds">00</span>
+            <span class="time-label">SEC</span>
+          </div>
+        </div>
+      </div>
+
+      <h1>Don't Miss Out!</h1>
+      <p class="subtitle">Subscribe now to unlock instant access to premium content, exclusive deals, and insider updates that 95% of visitors will never see.</p>
+
+      <div class="value-props">
+        <div class="prop">
+          <span class="check">✓</span>
+          <span>Instant access to premium content library</span>
+        </div>
+        <div class="prop">
+          <span class="check">✓</span>
+          <span>Exclusive member-only discounts up to 50% OFF</span>
+        </div>
+        <div class="prop">
+          <span class="check">✓</span>
+          <span>Weekly insider tips from industry experts</span>
+        </div>
+        <div class="prop">
+          <span class="check">✓</span>
+          <span>Early bird access to new products & features</span>
+        </div>
+      </div>
+
+      <form id="newsletter-form" class="form">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email to claim your spot"
+          required
+          aria-label="Email address"
+        >
+        <button type="submit" class="btn-claim">
+          <span class="btn-text">🔥 Claim My Free Access Now</span>
+        </button>
+      </form>
+
+      <div class="social-proof">
+        <div class="avatars">
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+        </div>
+        <p class="social-text"><strong>1,247 people</strong> subscribed in the last 24 hours</p>
+      </div>
+
+      <p class="guarantee">🔒 100% Privacy Guaranteed. Unsubscribe anytime with one click.</p>
+
+      <a href="#" id="skip-btn" class="skip-link">No thanks, I'll pass on this exclusive offer →</a>
+    </div>
+  </div>
+
+  <script>
+    let linkId = null;
+    let originalUrl = null;
+    let timeLeft = 300; // 5 minutes in seconds
+
+    async function fetchLinkData() {
+      const shortCode = window.location.pathname.split('/')[1];
+      try {
+        const res = await fetch('/api/redirect/' + shortCode);
+        const data = await res.json();
+        if (res.ok) {
+          linkId = data.linkId;
+          originalUrl = data.originalUrl;
+        }
+      } catch (err) {
+        console.error('Failed to fetch link data');
+      }
+    }
+
+    fetchLinkData();
+
+    // Countdown timer
+    function updateTimer() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+
+      document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+
+      if (timeLeft > 0) {
+        timeLeft--;
+      } else {
+        clearInterval(timerInterval);
+      }
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    document.getElementById('newsletter-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const btn = e.target.querySelector('button');
+      const btnText = btn.querySelector('.btn-text');
+      btnText.textContent = '⏳ Securing your spot...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, linkId }),
+        });
+
+        if (res.ok && originalUrl) {
+          window.location.href = originalUrl;
+        } else {
+          alert('Failed to subscribe. Please try again.');
+          btnText.textContent = '🔥 Claim My Free Access Now';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert('An error occurred. Please try again.');
+        btnText.textContent = '🔥 Claim My Free Access Now';
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('skip-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (originalUrl) {
+        window.location.href = originalUrl;
+      }
+    });
+  </script>
+</body>
+</html>

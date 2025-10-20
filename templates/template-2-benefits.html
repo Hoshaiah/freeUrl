@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Join thousands of subscribers and get exclusive content delivered to your inbox">
+  <title>Subscribe for Exclusive Content</title>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="badge">FREE NEWSLETTER</div>
+
+      <h1>Get Insider Access</h1>
+      <p class="lead">Join 25,000+ smart subscribers who receive our best content, tips, and exclusive offers every week.</p>
+
+      <div class="benefits">
+        <div class="benefit">
+          <span class="benefit-icon">✨</span>
+          <div class="benefit-text">
+            <h3>Weekly Insights</h3>
+            <p>Expert tips and strategies delivered every Monday</p>
+          </div>
+        </div>
+
+        <div class="benefit">
+          <span class="benefit-icon">🎁</span>
+          <div class="benefit-text">
+            <h3>Exclusive Resources</h3>
+            <p>Free downloads, templates, and tools for subscribers</p>
+          </div>
+        </div>
+
+        <div class="benefit">
+          <span class="benefit-icon">🚀</span>
+          <div class="benefit-text">
+            <h3>Early Access</h3>
+            <p>Be the first to know about new products and features</p>
+          </div>
+        </div>
+      </div>
+
+      <form id="newsletter-form" class="form">
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your best email"
+          required
+          aria-label="Email address"
+        >
+        <button type="submit" class="btn-submit">
+          <span>Subscribe Now</span>
+          <span class="arrow">→</span>
+        </button>
+      </form>
+
+      <div class="trust-signals">
+        <div class="trust-item">
+          <strong>25,000+</strong>
+          <span>Subscribers</span>
+        </div>
+        <div class="divider"></div>
+        <div class="trust-item">
+          <strong>4.9/5</strong>
+          <span>Rating</span>
+        </div>
+        <div class="divider"></div>
+        <div class="trust-item">
+          <strong>100%</strong>
+          <span>Free</span>
+        </div>
+      </div>
+
+      <p class="footer-text">No spam, ever. Unsubscribe with one click anytime.</p>
+
+      <a href="#" id="skip-btn" class="skip-link">Skip and continue →</a>
+    </div>
+  </div>
+
+  <script>
+    let linkId = null;
+    let originalUrl = null;
+
+    async function fetchLinkData() {
+      const shortCode = window.location.pathname.split('/')[1];
+      try {
+        const res = await fetch('/api/redirect/' + shortCode);
+        const data = await res.json();
+        if (res.ok) {
+          linkId = data.linkId;
+          originalUrl = data.originalUrl;
+        }
+      } catch (err) {
+        console.error('Failed to fetch link data');
+      }
+    }
+
+    fetchLinkData();
+
+    document.getElementById('newsletter-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const btn = e.target.querySelector('button');
+      const btnText = btn.querySelector('span');
+      btnText.textContent = 'Subscribing...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, linkId }),
+        });
+
+        if (res.ok && originalUrl) {
+          window.location.href = originalUrl;
+        } else {
+          alert('Failed to subscribe. Please try again.');
+          btnText.textContent = 'Subscribe Now';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert('An error occurred. Please try again.');
+        btnText.textContent = 'Subscribe Now';
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('skip-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (originalUrl) {
+        window.location.href = originalUrl;
+      }
+    });
+  </script>
+</body>
+</html>

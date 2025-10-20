@@ -8,15 +8,32 @@ export default function NewsletterInterstitial() {
   const params = useParams()
   const shortCode = params.shortCode as string
 
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
   const [linkId, setLinkId] = useState<string | null>(null)
+  const [customPage, setCustomPage] = useState<{ html: string; css: string } | null>(null)
+  const [hasCustomPage, setHasCustomPage] = useState<boolean | null>(null)
 
   useEffect(() => {
-    // Fetch the original URL and log the click
-    const fetchLink = async () => {
+    // Check if there's a custom page for this link
+    const fetchPage = async () => {
+      try {
+        const res = await fetch(`/api/pages/by-shortcode/${shortCode}`)
+
+        if (res.ok) {
+          const data = await res.json()
+          setCustomPage({ html: data.html, css: data.css })
+          setRedirectUrl(data.originalUrl)
+          setLinkId(data.linkId)
+          setHasCustomPage(true)
+          return
+        }
+      } catch {
+        // If custom page fetch fails, fall back to default behavior
+      }
+
+      // No custom page found, fetch link info for newsletter form
+      setHasCustomPage(false)
       try {
         const res = await fetch(`/api/redirect/${shortCode}`)
         const data = await res.json()
@@ -32,120 +49,70 @@ export default function NewsletterInterstitial() {
       }
     }
 
-    fetchLink()
+    fetchPage()
   }, [shortCode])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, linkId }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to sign up')
+  // Inject data into window before rendering custom page
+  useEffect(() => {
+    if (hasCustomPage && linkId && redirectUrl) {
+      interface WindowWithLinkData extends Window {
+        __LINK_DATA__?: {
+          linkId: string | null
+          originalUrl: string | null
+          shortCode: string
+        }
       }
+      (window as WindowWithLinkData).__LINK_DATA__ = {
+        linkId,
+        originalUrl: redirectUrl,
+        shortCode
+      };
+      console.log('Link data injected via useEffect:', (window as WindowWithLinkData).__LINK_DATA__);
+    }
+  }, [hasCustomPage, linkId, redirectUrl, shortCode]);
 
-      // Redirect after successful signup
-      if (redirectUrl) {
-        window.location.href = redirectUrl
+  // Execute scripts after custom page renders
+  useEffect(() => {
+    if (hasCustomPage && customPage) {
+      // Find and execute all script tags in the custom HTML
+      const container = document.querySelector('#custom-page-container');
+      if (container) {
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach((oldScript) => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.textContent = oldScript.textContent;
+          oldScript.parentNode?.replaceChild(newScript, oldScript);
+        });
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-      setLoading(false)
     }
-  }
+  }, [hasCustomPage, customPage]);
 
-  const handleSkip = () => {
-    if (redirectUrl) {
-      window.location.href = redirectUrl
-    }
-  }
-
-  if (error && !redirectUrl) {
+  // Render custom page if available
+  if (hasCustomPage && customPage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Not Found</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <Link
-            href="/"
-            className="inline-block bg-indigo-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-indigo-700 transition"
-          >
-            Go to Homepage
-          </Link>
-        </div>
-      </div>
+      <>
+        <style dangerouslySetInnerHTML={{ __html: customPage.css }} />
+        <div id="custom-page-container" dangerouslySetInnerHTML={{ __html: customPage.html }} />
+      </>
     )
   }
 
+  // If there's an error or no custom page found, show error
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="text-center mb-6">
-            <div className="text-5xl mb-4">📧</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Before you go...
-            </h1>
-            <p className="text-gray-600">
-              Join our newsletter for exclusive updates and content!
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              />
-            </div>
-
-            {error && redirectUrl && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || !redirectUrl}
-              className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition"
-            >
-              {loading ? 'Subscribing...' : 'Subscribe & Continue'}
-            </button>
-          </form>
-
-          <button
-            onClick={handleSkip}
-            disabled={!redirectUrl}
-            className="w-full mt-3 text-gray-600 hover:text-gray-900 py-2 text-sm font-medium transition disabled:text-gray-400 disabled:cursor-not-allowed"
-          >
-            Continue without signing up →
-          </button>
-
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-xs text-gray-500">
-              We respect your privacy. Unsubscribe at any time.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Not Found</h1>
+        <p className="text-gray-600 mb-6">{error || 'This link does not exist or has been deactivated.'}</p>
+        <Link
+          href="/"
+          className="inline-block bg-indigo-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-indigo-700 transition"
+        >
+          Go to Homepage
+        </Link>
       </div>
     </div>
   )

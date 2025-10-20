@@ -8,9 +8,13 @@ function isValidEmail(email: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, linkId } = await request.json()
+    const body = await request.json()
+    const { email, linkId } = body
+
+    console.log('Newsletter API called with:', { email, linkId })
 
     if (!email || typeof email !== 'string') {
+      console.error('Invalid email:', email)
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
@@ -18,6 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValidEmail(email)) {
+      console.error('Invalid email format:', email)
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
@@ -31,6 +36,8 @@ export async function POST(request: NextRequest) {
         linkId: linkId || null,
       },
     })
+
+    console.log('Email signup created successfully:', signup.id)
 
     return NextResponse.json({
       success: true,
