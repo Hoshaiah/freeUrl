@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import LoadingScreen from '@/components/LoadingScreen'
 
 export default function NewsletterInterstitial() {
   const params = useParams()
   const shortCode = params.shortCode as string
 
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
   const [linkId, setLinkId] = useState<string | null>(null)
@@ -26,6 +28,7 @@ export default function NewsletterInterstitial() {
           setRedirectUrl(data.originalUrl)
           setLinkId(data.linkId)
           setHasCustomPage(true)
+          setLoading(false)
           return
         }
       } catch {
@@ -46,6 +49,8 @@ export default function NewsletterInterstitial() {
         }
       } catch {
         setError('Failed to load link')
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -89,6 +94,11 @@ export default function NewsletterInterstitial() {
       }
     }
   }, [hasCustomPage, customPage]);
+
+  // Show loading screen while fetching data
+  if (loading) {
+    return <LoadingScreen />
+  }
 
   // Render custom page if available
   if (hasCustomPage && customPage) {

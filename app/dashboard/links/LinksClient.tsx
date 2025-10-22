@@ -25,6 +25,7 @@ export default function LinksClient({ links, showDeactivated }: Props) {
   const [linksPage, setLinksPage] = useState(1)
   const [linksPerPage, setLinksPerPage] = useState(25)
   const [togglingLinks, setTogglingLinks] = useState<Set<string>>(new Set())
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
 
   const handleToggleLink = async (linkId: string) => {
     setTogglingLinks(prev => new Set(prev).add(linkId))
@@ -49,6 +50,19 @@ export default function LinksClient({ links, showDeactivated }: Props) {
         return next
       })
     }
+  }
+
+  const handleCopyShortCode = (linkId: string, shortCode: string) => {
+    const baseUrl = window.location.origin
+    const fullUrl = `${baseUrl}/${shortCode}`
+
+    navigator.clipboard.writeText(fullUrl)
+    setCopiedLinkId(linkId)
+
+    // Hide notification after 2 seconds
+    setTimeout(() => {
+      setCopiedLinkId(null)
+    }, 2000)
   }
 
   // Links pagination
@@ -125,10 +139,19 @@ export default function LinksClient({ links, showDeactivated }: Props) {
                 {currentLinks.map((link) => (
                   <tr key={link.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <code className="text-sm font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                      <div className="flex items-center gap-2 relative">
+                        <code
+                          onClick={() => handleCopyShortCode(link.id, link.shortCode)}
+                          className="text-sm font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded cursor-pointer hover:bg-indigo-100 transition"
+                          title="Click to copy full URL"
+                        >
                           {link.shortCode}
                         </code>
+                        {copiedLinkId === link.id && (
+                          <span className="absolute left-full ml-2 px-2 py-1 bg-green-600 text-white text-xs rounded shadow-lg whitespace-nowrap animate-fade-in">
+                            Copied!
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
