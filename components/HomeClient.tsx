@@ -62,7 +62,7 @@ export default function HomeClient() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen">
+      <div className="min-h-screen pt-16">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
           <div className="max-w-6xl mx-auto px-4">

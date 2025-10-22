@@ -47,7 +47,7 @@ export default function Sidebar() {
   ]
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-16">
+    <div className="w-64 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-16 bottom-0 overflow-y-auto">
       <nav className="p-4 space-y-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href
