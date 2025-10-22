@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import LoadingScreen from '@/components/LoadingScreen'
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -58,6 +59,11 @@ export default function Home() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shortUrl)
+  }
+
+  // Show loading screen while checking session
+  if (status === 'loading') {
+    return <LoadingScreen />
   }
 
   return (
