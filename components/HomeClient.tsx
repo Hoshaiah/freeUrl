@@ -1,26 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import LoadingScreen from '@/components/LoadingScreen'
 
-export default function Home() {
+export default function HomeClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [longUrl, setLongUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  // Redirect logged-in users to dashboard
-  useEffect(() => {
-    if (status === 'authenticated' && session) {
-      router.push('/dashboard')
-    }
-  }, [status, session, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
