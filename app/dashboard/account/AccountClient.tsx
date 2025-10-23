@@ -31,6 +31,7 @@ export default function AccountClient({ user }: Props) {
   const [name, setName] = useState(user?.name || '')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [portalLoading, setPortalLoading] = useState(false)
 
   if (!user) {
     return <div>User not found</div>
@@ -56,7 +57,7 @@ export default function AccountClient({ user }: Props) {
         const data = await res.json()
         setMessage(data.error || 'Failed to update profile')
       }
-    } catch (error) {
+    } catch {
       setMessage('An error occurred')
     } finally {
       setLoading(false)
@@ -69,6 +70,58 @@ export default function AccountClient({ user }: Props) {
       month: 'long',
       day: 'numeric',
     })
+  }
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true)
+
+    try {
+      const res = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('Portal session error:', errorText)
+        let errorMessage = 'Failed to create portal session'
+
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error || errorMessage
+
+          // Include details if available
+          if (errorData.details) {
+            errorMessage += ': ' + errorData.details
+            console.error('Error details:', errorData.details)
+          }
+        } catch {
+          // If not JSON, use the text as error message if it's short
+          if (errorText.length < 100) {
+            errorMessage = errorText
+          }
+        }
+
+        alert(errorMessage)
+        return
+      }
+
+      const data = await res.json()
+
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert('Failed to create portal session')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred while connecting to Stripe')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
+  const handleUpgrade = () => {
+    router.push('/pricing')
   }
 
   return (
@@ -210,13 +263,11 @@ export default function AccountClient({ user }: Props) {
 
             <div className="pt-4 border-t border-gray-200">
               <button
-                onClick={() => {
-                  // TODO: Implement Stripe customer portal redirect
-                  alert('Stripe customer portal integration coming soon!')
-                }}
-                className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition"
+                onClick={handleManageSubscription}
+                disabled={portalLoading}
+                className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Manage Subscription
+                {portalLoading ? 'Loading...' : 'Manage Subscription'}
               </button>
             </div>
           </div>
@@ -228,15 +279,12 @@ export default function AccountClient({ user }: Props) {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
-            <p className="text-gray-600 mb-4">You're currently on the free plan</p>
+            <p className="text-gray-600 mb-4">You&apos;re currently on the free plan</p>
             <button
-              onClick={() => {
-                // TODO: Implement upgrade flow
-                alert('Upgrade flow coming soon!')
-              }}
+              onClick={handleUpgrade}
               className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
             >
-              Upgrade to Pro
+              View Plans & Upgrade
             </button>
           </div>
         )}

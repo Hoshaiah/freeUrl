@@ -117,7 +117,7 @@ export default function HomeClient() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Track Every Click</h3>
               <p className="text-gray-600">
-                Real-time analytics on clicks, conversions, location, and engagement-time. See what's working and double down on it.
+                Real-time analytics on clicks, conversions, location, and engagement-time. See what&apos;s working and double down on it.
               </p>
             </div>
 

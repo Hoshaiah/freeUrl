@@ -49,13 +49,12 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.created': {
         console.log('[Webhook] Customer subscription Hosh', event.data.object)
         const subscription = event.data.object as Stripe.Subscription
-        const subscriptionRaw = subscription as any
 
         console.log('[Webhook] Subscription created:', subscription.id)
         console.log('[Webhook] Subscription status:', subscription.status)
 
         // Get metadata from the subscription
-        let metadata = subscriptionRaw.metadata || {}
+        let metadata = subscription.metadata || {}
 
         console.log('[Webhook] Subscription metadata:', metadata)
 
@@ -66,13 +65,13 @@ export async function POST(request: NextRequest) {
           try {
             // List recent checkout sessions for this customer
             const sessions = await stripe.checkout.sessions.list({
-              customer: subscriptionRaw.customer,
+              customer: subscription.customer as string,
               limit: 10,
             })
 
             // Find the session that created this subscription
             const matchingSession = sessions.data.find(
-              (s: any) => s.subscription === subscription.id
+              (s) => s.subscription === subscription.id
             )
 
             if (matchingSession && matchingSession.metadata) {
@@ -99,15 +98,16 @@ export async function POST(request: NextRequest) {
           break
         }
 
-        const priceId = subscriptionRaw.items?.data?.[0]?.price?.id
-        const customerId = subscriptionRaw.customer
-        let currentPeriodEnd = subscriptionRaw.current_period_end
+        const priceId = subscription.items?.data?.[0]?.price?.id
+        const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
+        let currentPeriodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
 
         // If current_period_end is missing, calculate it from billing_cycle_anchor + interval
-        if (!currentPeriodEnd && subscriptionRaw.billing_cycle_anchor) {
-          const interval = subscriptionRaw.items?.data?.[0]?.price?.recurring?.interval
-          const intervalCount = subscriptionRaw.items?.data?.[0]?.price?.recurring?.interval_count || 1
-          const anchor = subscriptionRaw.billing_cycle_anchor
+        const billingCycleAnchor = (subscription as unknown as { billing_cycle_anchor?: number }).billing_cycle_anchor
+        if (!currentPeriodEnd && billingCycleAnchor) {
+          const interval = subscription.items?.data?.[0]?.price?.recurring?.interval
+          const intervalCount = subscription.items?.data?.[0]?.price?.recurring?.interval_count || 1
+          const anchor = billingCycleAnchor
 
           console.log('[Webhook] Calculating period end from interval:', interval, 'x', intervalCount)
 
@@ -125,13 +125,13 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('[Webhook] Current period end:', currentPeriodEnd)
-        console.log('[Webhook] Billing cycle anchor:', subscriptionRaw.billing_cycle_anchor)
+        console.log('[Webhook] Billing cycle anchor:', billingCycleAnchor)
         console.log('[Webhook] Price ID:', priceId)
         console.log('[Webhook] Customer ID:', customerId)
 
         if (!currentPeriodEnd) {
           console.error('[Webhook] Missing current_period_end and could not calculate from interval')
-          console.error('[Webhook] Full subscription:', JSON.stringify(subscriptionRaw, null, 2))
+          console.error('[Webhook] Full subscription:', JSON.stringify(subscription, null, 2))
           throw new Error('current_period_end not found')
         }
 
@@ -171,7 +171,6 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        const subscriptionRaw = subscription as any
 
         await prisma.subscription.update({
           where: {
@@ -179,7 +178,7 @@ export async function POST(request: NextRequest) {
           },
           data: {
             stripePriceId: subscription.items.data[0].price.id,
-            stripeCurrentPeriodEnd: new Date(subscriptionRaw.current_period_end * 1000),
+            stripeCurrentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
             status: subscription.status,
           },
         })
