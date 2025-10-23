@@ -261,13 +261,19 @@ export default function AccountClient({ user }: Props) {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-gray-200 flex gap-3">
               <button
                 onClick={handleManageSubscription}
                 disabled={portalLoading}
                 className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {portalLoading ? 'Loading...' : 'Manage Subscription'}
+              </button>
+              <button
+                onClick={handleUpgrade}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                Change Plan
               </button>
             </div>
           </div>

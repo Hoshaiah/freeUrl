@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { stripe } from '@/lib/stripe'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create Stripe checkout session
+    // Check if user already has an active subscription
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: {
+        userId: session.user.id,
+      },
+    })
+
+    // If user has an existing active subscription, redirect to Customer Portal for plan changes
+    if (existingSubscription && existingSubscription.status === 'active') {
+      console.log('[Checkout] User has existing subscription, redirecting to portal')
+
+      // Create portal session instead
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: existingSubscription.stripeCustomerId,
+        return_url: `${process.env.NEXTAUTH_URL}/dashboard/account`,
+      })
+
+      return NextResponse.json({
+        url: portalSession.url,
+        isUpgrade: true,
+        message: 'Redirecting to manage your subscription...'
+      })
+    }
+
+    console.log('[Checkout] Creating new subscription checkout')
+
+    // Create Stripe checkout session for new subscription
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
