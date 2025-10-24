@@ -33,6 +33,7 @@ export default function AccountClient({ user }: Props) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [portalLoading, setPortalLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   if (!user) {
     return <div>User not found</div>
@@ -123,6 +124,50 @@ export default function AccountClient({ user }: Props) {
 
   const handleUpgrade = () => {
     router.push('/pricing')
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirmation = confirm(
+      'Are you sure you want to delete your account?\n\n' +
+      'Your account will be retained for 30 days, during which you can reactivate it by logging in again. ' +
+      'After 30 days, your data will be permanently deleted.\n\n' +
+      'This action will:\n' +
+      '- Immediately log you out\n' +
+      '- Hide all your links and data\n' +
+      '- Cancel any active subscriptions\n\n' +
+      'Type "DELETE" in the next prompt to confirm.'
+    )
+
+    if (!confirmation) return
+
+    const finalConfirmation = prompt('Type "DELETE" to confirm account deletion:')
+    if (finalConfirmation !== 'DELETE') {
+      alert('Account deletion cancelled.')
+      return
+    }
+
+    setDeleteLoading(true)
+
+    try {
+      const res = await fetch('/api/user/delete', {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert(data.message)
+        // Redirect to home page after deletion
+        window.location.href = '/'
+      } else {
+        alert(data.error || 'Failed to delete account')
+        setDeleteLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error)
+      alert('An error occurred while deleting your account')
+      setDeleteLoading(false)
+    }
   }
 
   return (
@@ -326,17 +371,14 @@ export default function AccountClient({ user }: Props) {
           <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg">
             <div>
               <h3 className="font-medium text-gray-900">Delete Account</h3>
-              <p className="text-sm text-gray-600">Permanently delete your account and all data</p>
+              <p className="text-sm text-gray-600">Delete your account (30-day retention period for reactivation)</p>
             </div>
             <button
-              onClick={() => {
-                if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                  alert('Account deletion flow coming soon!')
-                }
-              }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+              onClick={handleDeleteAccount}
+              disabled={deleteLoading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition disabled:bg-red-400 disabled:cursor-not-allowed"
             >
-              Delete Account
+              {deleteLoading ? 'Deleting...' : 'Delete Account'}
             </button>
           </div>
         </div>

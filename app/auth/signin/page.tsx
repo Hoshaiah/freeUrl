@@ -8,6 +8,7 @@ import { Suspense } from 'react'
 function SignInForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const error = searchParams.get('error')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center p-4">
@@ -17,6 +18,24 @@ function SignInForm() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to FreeURL</h1>
             <p className="text-gray-600">Sign in to manage your shortened links</p>
           </div>
+
+          {error === 'AccountDeleted' && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <h3 className="font-medium text-red-900">Account Permanently Deleted</h3>
+                  <p className="text-sm text-red-800 mt-1">
+                    Your account was deleted more than 30 days ago and cannot be recovered.
+                    All associated data has been scheduled for permanent deletion.
+                    If you believe this is an error, please contact support.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <button
