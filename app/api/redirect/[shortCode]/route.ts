@@ -20,7 +20,7 @@ export async function GET(
       where: { shortCode },
     })
 
-    if (!link) {
+    if (!link || link.deletedAt) {
       return NextResponse.json(
         { error: 'Link not found' },
         { status: 404 }

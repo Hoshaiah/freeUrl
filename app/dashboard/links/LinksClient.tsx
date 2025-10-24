@@ -25,6 +25,7 @@ export default function LinksClient({ links, showDeactivated }: Props) {
   const [linksPage, setLinksPage] = useState(1)
   const [linksPerPage, setLinksPerPage] = useState(25)
   const [togglingLinks, setTogglingLinks] = useState<Set<string>>(new Set())
+  const [deletingLinks, setDeletingLinks] = useState<Set<string>>(new Set())
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
 
   const handleToggleLink = async (linkId: string) => {
@@ -45,6 +46,35 @@ export default function LinksClient({ links, showDeactivated }: Props) {
       alert('An error occurred')
     } finally {
       setTogglingLinks(prev => {
+        const next = new Set(prev)
+        next.delete(linkId)
+        return next
+      })
+    }
+  }
+
+  const handleDeleteLink = async (linkId: string, shortCode: string) => {
+    if (!confirm(`Are you sure you want to delete link ${shortCode}? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingLinks(prev => new Set(prev).add(linkId))
+
+    try {
+      const res = await fetch(`/api/links/${linkId}/delete`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        router.refresh()
+      } else {
+        alert('Failed to delete link')
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      alert('An error occurred')
+    } finally {
+      setDeletingLinks(prev => {
         const next = new Set(prev)
         next.delete(linkId)
         return next
@@ -181,21 +211,31 @@ export default function LinksClient({ links, showDeactivated }: Props) {
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleToggleLink(link.id)}
-                        disabled={togglingLinks.has(link.id)}
-                        className={`px-3 py-1 rounded text-sm font-medium transition ${
-                          showDeactivated
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200 disabled:bg-green-50'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200 disabled:bg-red-50'
-                        } disabled:cursor-not-allowed`}
-                      >
-                        {togglingLinks.has(link.id)
-                          ? '...'
-                          : showDeactivated
-                          ? 'Activate'
-                          : 'Deactivate'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleLink(link.id)}
+                          disabled={togglingLinks.has(link.id)}
+                          className={`px-3 py-1 rounded text-sm font-medium transition ${
+                            showDeactivated
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200 disabled:bg-green-50'
+                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 disabled:bg-yellow-50'
+                          } disabled:cursor-not-allowed`}
+                        >
+                          {togglingLinks.has(link.id)
+                            ? '...'
+                            : showDeactivated
+                            ? 'Activate'
+                            : 'Deactivate'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLink(link.id, link.shortCode)}
+                          disabled={deletingLinks.has(link.id)}
+                          className="px-3 py-1 rounded text-sm font-medium transition bg-red-100 text-red-800 hover:bg-red-200 disabled:bg-red-50 disabled:cursor-not-allowed"
+                          title="Delete link permanently"
+                        >
+                          {deletingLinks.has(link.id) ? '...' : 'Delete'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

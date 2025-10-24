@@ -70,7 +70,7 @@ export async function POST(
       where: { id: linkId },
     });
 
-    if (!link) {
+    if (!link || link.deletedAt) {
       return NextResponse.json(
         { error: "Link not found" },
         { status: 404 }
@@ -130,7 +130,7 @@ export async function DELETE(
       where: { id: linkId },
     });
 
-    if (!link) {
+    if (!link || link.deletedAt) {
       return NextResponse.json(
         { error: "Link not found" },
         { status: 404 }

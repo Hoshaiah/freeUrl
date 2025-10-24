@@ -52,6 +52,7 @@ model Link {
   createdAt   DateTime      @default(now())
   userId      String?
   isActive    Boolean       @default(true)
+  deletedAt   DateTime?
   clicks      Click[]
   emailSignups EmailSignup[]
   user        User?         @relation(fields: [userId], references: [id])
@@ -59,6 +60,7 @@ model Link {
 
   @@index([isActive])
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Session {

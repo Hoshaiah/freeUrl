@@ -14,6 +14,7 @@ async function getLinks(userId: string, showDeactivated: boolean = false) {
     where: {
       userId,
       isActive: showDeactivated ? false : true,
+      deletedAt: null,
     },
     include: {
       clicks: {

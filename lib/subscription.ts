@@ -88,7 +88,10 @@ export async function getUserPlan(userId: string): Promise<PlanType> {
 export async function checkLinkLimit(userId: string): Promise<boolean> {
   const plan = await getUserPlan(userId)
   const linkCount = await prisma.link.count({
-    where: { userId },
+    where: {
+      userId,
+      deletedAt: null,
+    },
   })
 
   return linkCount < PLAN_LIMITS[plan].links

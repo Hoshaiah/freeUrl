@@ -16,7 +16,7 @@ export async function GET(
       },
     });
 
-    if (!link) {
+    if (!link || link.deletedAt) {
       return NextResponse.json(
         { error: "Link not found" },
         { status: 404 }

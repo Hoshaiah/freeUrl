@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function PATCH(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ linkId: string }> }
 ) {
@@ -38,20 +38,20 @@ export async function PATCH(
       )
     }
 
-    // Toggle the isActive status
-    const updatedLink = await prisma.link.update({
+    // Soft delete the link by setting deletedAt
+    const deletedLink = await prisma.link.update({
       where: { id: linkId },
       data: {
-        isActive: !link.isActive,
+        deletedAt: new Date(),
       },
     })
 
     return NextResponse.json({
       success: true,
-      isActive: updatedLink.isActive,
+      deletedAt: deletedLink.deletedAt,
     })
   } catch (error) {
-    console.error('Error toggling link status:', error)
+    console.error('Error deleting link:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
