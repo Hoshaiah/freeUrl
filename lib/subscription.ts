@@ -1,6 +1,32 @@
 import { prisma } from './prisma'
+import { stripe } from './stripe'
 
 export type PlanType = 'free' | 'core' | 'pro'
+
+// Map Stripe price IDs to plan names
+export function getPlanFromPriceId(priceId: string): PlanType {
+  const corePriceIds = [
+    process.env.NEXT_PUBLIC_STRIPE_CORE_MONTHLY_PRICE_ID,
+    process.env.NEXT_PUBLIC_STRIPE_CORE_ANNUAL_PRICE_ID,
+  ]
+
+  const proPriceIds = [
+    process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID,
+    process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID,
+  ]
+
+  if (corePriceIds.includes(priceId)) {
+    return 'core'
+  }
+
+  if (proPriceIds.includes(priceId)) {
+    return 'pro'
+  }
+
+  // Default to free if price ID doesn't match
+  console.warn('[getPlanFromPriceId] Unknown price ID:', priceId, 'defaulting to free')
+  return 'free'
+}
 
 export const PLAN_LIMITS = {
   free: {
@@ -87,4 +113,59 @@ export async function checkEmailSignupLimit(userId: string): Promise<boolean> {
   })
 
   return signupCount < PLAN_LIMITS[plan].emailSignups
+}
+
+export async function syncSubscriptionFromStripe(userId: string): Promise<void> {
+  try {
+    // Get local subscription
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId },
+    })
+
+    // No local subscription, nothing to sync
+    if (!subscription || !subscription.stripeSubscriptionId) {
+      return
+    }
+
+    // Fetch latest subscription data from Stripe
+    const stripeSubscription = await stripe.subscriptions.retrieve(
+      subscription.stripeSubscriptionId
+    )
+
+    // In newer Stripe API versions, current_period_end is in items.data[0]
+    const currentPeriodEnd = (stripeSubscription.items.data[0] as unknown as { current_period_end: number })?.current_period_end
+
+    if (!currentPeriodEnd) {
+      console.error('[syncSubscriptionFromStripe] Missing current_period_end from Stripe')
+      return
+    }
+
+    const priceId = stripeSubscription.items.data[0]?.price.id || subscription.stripePriceId
+    const plan = getPlanFromPriceId(priceId)
+
+    console.log('[syncSubscriptionFromStripe] Stripe data:', {
+      status: stripeSubscription.status,
+      currentPeriodEnd,
+      cancel_at: stripeSubscription.cancel_at,
+      priceId,
+      plan,
+    })
+
+    // Update local subscription with latest Stripe data
+    await prisma.subscription.update({
+      where: { userId },
+      data: {
+        status: stripeSubscription.status,
+        stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
+        stripePriceId: priceId,
+        plan,
+        cancelAt: stripeSubscription.cancel_at ? new Date(stripeSubscription.cancel_at * 1000) : null,
+      },
+    })
+
+    console.log('[syncSubscriptionFromStripe] Successfully synced subscription for user:', userId)
+  } catch (error) {
+    console.error('[syncSubscriptionFromStripe] Error syncing subscription for user:', userId, error)
+    // Don't throw - we don't want to block sign-in if sync fails
+  }
 }

@@ -15,6 +15,7 @@ type UserData = {
     plan: string
     status: string
     stripeCurrentPeriodEnd: Date
+    cancelAt: Date | null
   } | null
   _count: {
     links: number
@@ -245,19 +246,41 @@ export default function AccountClient({ user }: Props) {
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-500">Status</p>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  user.subscription.status === 'active'
+                  user.subscription.cancelAt
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : user.subscription.status === 'active'
                     ? 'bg-green-100 text-green-800'
+                    : user.subscription.status === 'canceled'
+                    ? 'bg-red-100 text-red-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {user.subscription.status}
+                  {user.subscription.cancelAt ? 'Cancelling' : user.subscription.status === 'canceled' ? 'Cancelled' : user.subscription.status}
                 </span>
               </div>
             </div>
 
+            {user.subscription.cancelAt && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <h3 className="font-medium text-yellow-900">Subscription Cancelled</h3>
+                    <p className="text-sm text-yellow-800 mt-1">
+                      Your subscription has been cancelled but remains active until {formatDate(user.subscription.cancelAt)}. After this date, you&apos;ll be moved to the free plan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-500">Billing Period Ends</p>
-                <p className="text-gray-900">{formatDate(user.subscription.stripeCurrentPeriodEnd)}</p>
+                <p className="text-sm font-medium text-gray-500">
+                  {user.subscription.cancelAt ? 'Active Until' : 'Billing Period Ends'}
+                </p>
+                <p className="text-gray-900">{formatDate(user.subscription.cancelAt || user.subscription.stripeCurrentPeriodEnd)}</p>
               </div>
             </div>
 

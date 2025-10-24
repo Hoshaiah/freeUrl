@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { getPlanFromPriceId } from '@/lib/subscription'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -100,9 +101,16 @@ export async function POST(request: NextRequest) {
 
         const priceId = subscription.items?.data?.[0]?.price?.id
         const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
-        let currentPeriodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
 
-        // If current_period_end is missing, calculate it from billing_cycle_anchor + interval
+        // In newer Stripe API versions, current_period_end is in items.data[0]
+        let currentPeriodEnd = (subscription.items?.data?.[0] as unknown as { current_period_end?: number })?.current_period_end
+
+        // Fallback: check top-level subscription object (older API versions)
+        if (!currentPeriodEnd) {
+          currentPeriodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
+        }
+
+        // If still missing, calculate it from billing_cycle_anchor + interval
         const billingCycleAnchor = (subscription as unknown as { billing_cycle_anchor?: number }).billing_cycle_anchor
         if (!currentPeriodEnd && billingCycleAnchor) {
           const interval = subscription.items?.data?.[0]?.price?.recurring?.interval
@@ -143,13 +151,17 @@ export async function POST(request: NextRequest) {
           throw new Error('Customer ID not found')
         }
 
+        // Map price ID to plan name, with fallback to metadata
+        const plan = getPlanFromPriceId(priceId)
+
         const subscriptionData = {
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
           stripePriceId: priceId,
           stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
-          plan: metadata.planName.toLowerCase(),
+          plan,
           status: subscription.status,
+          cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,
         }
 
         console.log('[Webhook] Upserting subscription:', subscriptionData)
@@ -172,14 +184,40 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
 
+        // In newer Stripe API versions, current_period_end is in items.data[0]
+        let currentPeriodEnd = (subscription.items?.data?.[0] as unknown as { current_period_end?: number })?.current_period_end
+
+        // Fallback: check top-level subscription object (older API versions)
+        if (!currentPeriodEnd) {
+          currentPeriodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
+        }
+
+        if (!currentPeriodEnd) {
+          console.error('[Webhook] Missing current_period_end in subscription.updated')
+          break
+        }
+
+        const priceId = subscription.items.data[0].price.id
+        const plan = getPlanFromPriceId(priceId)
+
+        console.log('[Webhook] Updating subscription:', {
+          subscriptionId: subscription.id,
+          priceId,
+          plan,
+          status: subscription.status,
+          cancelAt: subscription.cancel_at,
+        })
+
         await prisma.subscription.update({
           where: {
             stripeSubscriptionId: subscription.id,
           },
           data: {
-            stripePriceId: subscription.items.data[0].price.id,
-            stripeCurrentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
+            stripePriceId: priceId,
+            plan,
+            stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
             status: subscription.status,
+            cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,
           },
         })
         break
