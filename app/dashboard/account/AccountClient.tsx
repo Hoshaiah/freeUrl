@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import DeleteAccountModal from './DeleteAccountModal'
 
 type UserData = {
   id: string
@@ -34,6 +35,7 @@ export default function AccountClient({ user }: Props) {
   const [message, setMessage] = useState('')
   const [portalLoading, setPortalLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   if (!user) {
     return <div>User not found</div>
@@ -127,25 +129,6 @@ export default function AccountClient({ user }: Props) {
   }
 
   const handleDeleteAccount = async () => {
-    const confirmation = confirm(
-      'Are you sure you want to delete your account?\n\n' +
-      'Your account will be retained for 30 days, during which you can reactivate it by logging in again. ' +
-      'After 30 days, your data will be permanently deleted.\n\n' +
-      'This action will:\n' +
-      '- Immediately log you out\n' +
-      '- Hide all your links and data\n' +
-      '- Cancel any active subscriptions\n\n' +
-      'Type "DELETE" in the next prompt to confirm.'
-    )
-
-    if (!confirmation) return
-
-    const finalConfirmation = prompt('Type "DELETE" to confirm account deletion:')
-    if (finalConfirmation !== 'DELETE') {
-      alert('Account deletion cancelled.')
-      return
-    }
-
     setDeleteLoading(true)
 
     try {
@@ -156,9 +139,9 @@ export default function AccountClient({ user }: Props) {
       const data = await res.json()
 
       if (res.ok) {
-        alert(data.message)
-        // Redirect to home page after deletion
-        window.location.href = '/'
+        // Close modal and redirect to home page after deletion
+        setShowDeleteModal(false)
+        window.location.href = '/?deleted=true'
       } else {
         alert(data.error || 'Failed to delete account')
         setDeleteLoading(false)
@@ -374,15 +357,22 @@ export default function AccountClient({ user }: Props) {
               <p className="text-sm text-gray-600">Delete your account (30-day retention period for reactivation)</p>
             </div>
             <button
-              onClick={handleDeleteAccount}
-              disabled={deleteLoading}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition disabled:bg-red-400 disabled:cursor-not-allowed"
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
             >
-              {deleteLoading ? 'Deleting...' : 'Delete Account'}
+              Delete Account
             </button>
           </div>
         </div>
       </div>
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        loading={deleteLoading}
+      />
     </div>
   )
 }

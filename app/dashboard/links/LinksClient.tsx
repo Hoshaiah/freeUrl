@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import DeleteLinkModal from './DeleteLinkModal'
 
 type LinkType = {
   id: string
@@ -27,6 +28,7 @@ export default function LinksClient({ links, showDeactivated }: Props) {
   const [togglingLinks, setTogglingLinks] = useState<Set<string>>(new Set())
   const [deletingLinks, setDeletingLinks] = useState<Set<string>>(new Set())
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
+  const [linkToDelete, setLinkToDelete] = useState<{ id: string; shortCode: string } | null>(null)
 
   const handleToggleLink = async (linkId: string) => {
     setTogglingLinks(prev => new Set(prev).add(linkId))
@@ -53,19 +55,22 @@ export default function LinksClient({ links, showDeactivated }: Props) {
     }
   }
 
-  const handleDeleteLink = async (linkId: string, shortCode: string) => {
-    if (!confirm(`Are you sure you want to delete link ${shortCode}? This action cannot be undone.`)) {
-      return
-    }
+  const handleDeleteLink = (linkId: string, shortCode: string) => {
+    setLinkToDelete({ id: linkId, shortCode })
+  }
 
-    setDeletingLinks(prev => new Set(prev).add(linkId))
+  const confirmDeleteLink = async () => {
+    if (!linkToDelete) return
+
+    setDeletingLinks(prev => new Set(prev).add(linkToDelete.id))
 
     try {
-      const res = await fetch(`/api/links/${linkId}/delete`, {
+      const res = await fetch(`/api/links/${linkToDelete.id}/delete`, {
         method: 'DELETE',
       })
 
       if (res.ok) {
+        setLinkToDelete(null)
         router.refresh()
       } else {
         alert('Failed to delete link')
@@ -76,7 +81,7 @@ export default function LinksClient({ links, showDeactivated }: Props) {
     } finally {
       setDeletingLinks(prev => {
         const next = new Set(prev)
-        next.delete(linkId)
+        next.delete(linkToDelete.id)
         return next
       })
     }
@@ -296,6 +301,17 @@ export default function LinksClient({ links, showDeactivated }: Props) {
           </>
         )}
       </div>
+
+      {/* Delete Link Modal */}
+      {linkToDelete && (
+        <DeleteLinkModal
+          isOpen={true}
+          onClose={() => setLinkToDelete(null)}
+          onConfirm={confirmDeleteLink}
+          loading={deletingLinks.has(linkToDelete.id)}
+          shortCode={linkToDelete.shortCode}
+        />
+      )}
     </div>
   )
 }
