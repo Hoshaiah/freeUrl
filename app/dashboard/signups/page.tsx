@@ -9,8 +9,13 @@ import SignupsClient from './SignupsClient'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-async function getEmailSignups() {
+async function getEmailSignups(userId: string) {
   const emailSignups = await prisma.emailSignup.findMany({
+    where: {
+      link: {
+        userId: userId,
+      },
+    },
     orderBy: {
       createdAt: 'desc',
     },
@@ -26,7 +31,7 @@ export default async function SignupsPage() {
     redirect('/auth/signin?callbackUrl=/dashboard/signups')
   }
 
-  const { emailSignups } = await getEmailSignups()
+  const { emailSignups } = await getEmailSignups(session.user.id)
 
   return (
     <>

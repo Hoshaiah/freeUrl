@@ -9,6 +9,15 @@ export async function GET(
   { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { linkId } = await params;
 
     const page = await prisma.page.findUnique({
@@ -18,6 +27,7 @@ export async function GET(
           select: {
             shortCode: true,
             originalUrl: true,
+            userId: true,
           },
         },
       },
@@ -27,6 +37,14 @@ export async function GET(
       return NextResponse.json(
         { error: "Page not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify the link belongs to the user
+    if (page.link.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Forbidden - You don't own this link" },
+        { status: 403 }
       );
     }
 
@@ -89,6 +107,7 @@ export async function POST(
       where: { linkId },
       create: {
         linkId,
+        userId: link.userId,
         html,
         css,
       },

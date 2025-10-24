@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
         await prisma.page.create({
           data: {
             linkId: link.id,
+            userId: link.userId,
             html: defaultTemplate.html,
             css: defaultTemplate.css,
           },

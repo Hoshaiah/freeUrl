@@ -29,11 +29,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get userId from link if linkId is provided
+    let userId = null
+    if (linkId) {
+      const link = await prisma.link.findUnique({
+        where: { id: linkId },
+        select: { userId: true },
+      })
+      userId = link?.userId || null
+    }
+
     // Create the email signup
     const signup = await prisma.emailSignup.create({
       data: {
         email: email.toLowerCase(),
         linkId: linkId || null,
+        userId: userId,
       },
     })
 

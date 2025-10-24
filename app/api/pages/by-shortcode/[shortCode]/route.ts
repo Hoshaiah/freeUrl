@@ -41,6 +41,7 @@ export async function GET(
     await prisma.click.create({
       data: {
         linkId: link.id,
+        userId: link.userId,
       },
     });
 
