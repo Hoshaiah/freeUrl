@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getUserPlan } from '@/lib/subscription'
 
 export async function GET() {
   try {
@@ -13,6 +14,11 @@ export async function GET() {
         { status: 401 }
       )
     }
+
+    // Get user's plan
+    const userPlan = await getUserPlan(session.user.id)
+    const isFreeUser = userPlan === 'free'
+    const freeUserLimit = 10
 
     // Get all email signups for the user's links
     const emailSignups = await prisma.emailSignup.findMany({
@@ -34,6 +40,8 @@ export async function GET() {
       orderBy: {
         createdAt: 'desc',
       },
+      // Limit to 10 for free users
+      take: isFreeUser ? freeUserLimit : undefined,
     })
 
     // Generate CSV content

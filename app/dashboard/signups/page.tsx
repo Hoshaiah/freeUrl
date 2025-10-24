@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Sidebar from '@/components/Sidebar'
 import SignupsClient from './SignupsClient'
+import { getUserPlan } from '@/lib/subscription'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -27,11 +28,12 @@ async function getEmailSignups(userId: string) {
 export default async function SignupsPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect('/auth/signin?callbackUrl=/dashboard/signups')
   }
 
   const { emailSignups } = await getEmailSignups(session.user.id)
+  const userPlan = await getUserPlan(session.user.id)
 
   return (
     <>
@@ -45,7 +47,7 @@ export default async function SignupsPage() {
               <p className="text-gray-600">View all email addresses captured through your links</p>
             </div>
 
-            <SignupsClient emailSignups={emailSignups} />
+            <SignupsClient emailSignups={emailSignups} userPlan={userPlan} />
           </div>
         </div>
       </div>
